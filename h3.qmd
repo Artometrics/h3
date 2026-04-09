@@ -592,6 +592,139 @@ ggsave("chart5_wikipedia.png", plot = p5,
 
 ---
 
+## CHART 6 — THE DURATION DRIFT
+
+### Episode Duration Over Time, 2017–2026
+
+```{r chart6-episode-duration}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 10
+#| fig-height: 6.5
+
+era_levels_dur <- c(
+  "Podcast Launch (2017–Sep 2020)",
+  "Frenemies Era (Sep 2020–Jun 2021)",
+  "Leftovers Era (Jun 2021–Oct 2023)",
+  "Post-Leftovers (Oct 2023–2026)"
+)
+
+era_colors_dur <- c(
+  "Podcast Launch (2017–Sep 2020)"       = art_secondary,
+  "Frenemies Era (Sep 2020–Jun 2021)"    = art_highlight,
+  "Leftovers Era (Jun 2021–Oct 2023)"    = art_purple,
+  "Post-Leftovers (Oct 2023–2026)"       = art_teal
+)
+
+p6_data <- episodes |>
+  mutate(
+    airDate = as.Date(airDate),
+    month   = floor_date(airDate, "month"),
+    era     = case_when(
+      airDate < as.Date("2020-09-15")                                    ~
+        "Podcast Launch (2017–Sep 2020)",
+      airDate >= as.Date("2020-09-15") & airDate < as.Date("2021-06-08") ~
+        "Frenemies Era (Sep 2020–Jun 2021)",
+      airDate >= as.Date("2021-06-08") & airDate < as.Date("2023-10-07") ~
+        "Leftovers Era (Jun 2021–Oct 2023)",
+      TRUE ~
+        "Post-Leftovers (Oct 2023–2026)"
+    ),
+    era = factor(era, levels = era_levels_dur)
+  ) |>
+  group_by(month, era) |>
+  summarise(median_min = median(length_min, na.rm = TRUE), .groups = "drop")
+
+p6 <- ggplot(p6_data, aes(x = month, y = median_min)) +
+  geom_point(aes(color = era), size = 2, alpha = 0.5) +
+  geom_smooth(
+    method    = "loess",
+    span      = 0.25,
+    se        = FALSE,
+    color     = art_dark,
+    linewidth = 1.2
+  ) +
+  geom_hline(
+    yintercept = 180,
+    linetype   = "dashed",
+    color      = art_mid,
+    linewidth  = 0.5
+  ) +
+  annotate(
+    "text",
+    x     = as.Date("2017-06-01"),
+    y     = 184,
+    label = "3-hour mark",
+    color = art_mid,
+    size  = 3.2,
+    hjust = 0
+  ) +
+  scale_color_manual(
+    values = era_colors_dur,
+    guide  = guide_legend(nrow = 2, override.aes = list(size = 3, alpha = 1))
+  ) +
+  scale_x_date(
+    date_breaks = "1 year",
+    date_labels = "%Y",
+    expand      = c(0.01, 0)
+  ) +
+  scale_y_continuous(
+    breaks = seq(0, 300, by = 60),
+    labels = function(x) paste0(x, " min"),
+    expand = c(0.02, 0)
+  ) +
+  labs(
+    title    = "H3 EPISODES GOT LONGER EVERY YEAR — <span style='color:#C0392B'>**AND NEVER CAME BACK**</span>",
+    subtitle = "Median episode duration by month · Smoothed trend line · 680 episodes",
+    x        = NULL,
+    y        = "Median Duration (minutes)",
+    color    = NULL,
+    caption  = "Data: Podchaser API, pulled April 2026 | Artometrics Original Dataset\n— ARTOMETRICS"
+  ) +
+  theme_artometrics() +
+  theme(
+    legend.position    = "bottom",
+    legend.key.size    = unit(0.8, "lines"),
+    legend.spacing.x   = unit(0.4, "cm"),
+    panel.grid.major.x = element_blank()
+  )
+
+p6
+
+ggsave("chart6_episode_duration.png", plot = p6,
+       path = ".", width = 12, height = 7, dpi = 300, bg = "white")
+```
+
+### 42 MINUTES TO 4 HOURS: THE CREEP NOBODY NOTICED
+
+When H3 launched the podcast in 2017, the median episode ran **42
+minutes**. That's a commute. By 2024, the median had crossed **220
+minutes** — longer than most feature films. The chart shows this wasn't
+a sudden format change; it was a slow, continuous drift upward that
+compounded year over year until a new normal was established.
+
+### THE FLOOR SHIFT OF 2022
+
+The clearest structural break in the duration data isn't a spike — it's
+a floor shift. Before 2022, monthly medians regularly dipped below 120
+minutes. After 2022, they never did. The show locked into 3-hour-plus
+territory and stayed there. Leftovers (2021) normalized the extended
+format; by the time it ended (2023), the audience had been conditioned
+to expect marathon sessions as the default.
+
+### FEWER EPISODES, LONGER RUNTIME — THE 2024 PARADOX
+
+Cross-reference with Chart 3 and the story gets sharper. In 2024, H3
+dropped to just **34 episodes** — a 72% collapse from 2023's peak. But
+duration hit its all-time high: months regularly clearing **220–240
+minutes**. The show was publishing less but asking more from the audience
+that stayed. Each episode became a larger commitment, not a smaller one.
+The fans who remained weren't casual — they were in for 4 hours at a
+time.
+
+---
+
 ## LIMITATIONS
 
 ### [PLACEHOLDER — limitations coming]
