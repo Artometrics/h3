@@ -1,0 +1,21 @@
+---
+title: "THE ARTOMETRICS OF H3"
+format:
+  html:
+    number-sections: false
+    theme: none
+    css: artometrics.css
+    toc: true
+    toc-depth: 2
+    toc-title: "IN THIS REPORT"
+    toc-location: left
+    smooth-scroll: true
+    embed-resources: true
+  pdf:
+    number-sections: false
+editor:
+  markdown:
+    wrap: 72
+---
+
+
