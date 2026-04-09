@@ -18,4 +18,632 @@ editor:
     wrap: 72
 ---
 
+```{r setup}
+#| echo: false
+#| warning: false
+#| message: false
 
+library(tidyverse)
+library(scales)
+library(ggtext)
+library(lubridate)
+library(httr)
+library(jsonlite)
+library(gtrendsR)
+
+# Artometrics palette
+art_bg        <- "#FAFAF8"
+art_cream     <- "#F2F0EB"
+art_dark      <- "#1C1C1E"
+art_mid       <- "#6B6B6B"
+art_highlight <- "#C0392B"
+art_secondary <- "#2C3E6B"
+art_muted     <- "#D5D5D5"
+
+# Extended palette for multi-series charts
+art_purple    <- "#6C3483"
+art_teal      <- "#117864"
+
+theme_artometrics <- function() {
+  theme_minimal(base_family = "Helvetica") +
+    theme(
+      plot.background  = element_rect(fill = art_cream, color = NA),
+      panel.background = element_rect(fill = art_cream, color = NA),
+      panel.grid.major = element_line(color = art_muted, linewidth = 0.4),
+      panel.grid.minor = element_blank(),
+      plot.title       = element_markdown(size = 14, face = "bold",
+                                          color = art_dark),
+      plot.subtitle    = element_text(size = 11, color = art_mid),
+      plot.caption     = element_text(size = 8, color = art_mid, hjust = 0),
+      axis.text        = element_text(size = 9, color = art_mid),
+      axis.title       = element_text(size = 10, color = art_dark),
+      legend.background = element_rect(fill = art_cream, color = NA),
+      legend.text      = element_text(color = art_dark),
+      strip.text       = element_text(face = "bold", color = art_dark)
+    )
+}
+```
+
+```{r load-data}
+#| echo: false
+#| warning: false
+#| message: false
+
+h3 <- read_csv(
+  "https://raw.githubusercontent.com/Artometrics/h3/main/h3_master.csv"
+) |>
+  filter(duration_minutes > 1, view_count > 0)
+
+wiki <- read_csv(
+  "https://raw.githubusercontent.com/Artometrics/h3/main/h3_wikipedia.csv"
+)
+
+trends <- read_csv(
+  "https://raw.githubusercontent.com/Artometrics/h3/main/h3_trends.csv"
+) |>
+  filter(date >= as.Date("2012-01-01"))
+
+episodes <- read_csv(
+  "https://raw.githubusercontent.com/Artometrics/h3/main/h3_podchaser_episodes.csv"
+)
+```
+
+## FAST FACTS
+
+```{=html}
+<style>
+  .facts-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 24px 0 32px 0;
+  }
+  .fact-box {
+    background: #F2F0EB;
+    border-left: 4px solid #C0392B;
+    padding: 18px 20px;
+    border-radius: 2px;
+  }
+  .fact-number {
+    display: block;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #C0392B;
+    line-height: 1.1;
+    margin-bottom: 6px;
+    font-family: Helvetica, sans-serif;
+  }
+  .fact-label {
+    display: block;
+    font-size: 0.82rem;
+    color: #6B6B6B;
+    line-height: 1.45;
+    font-family: Helvetica, sans-serif;
+  }
+  @media (max-width: 700px) {
+    .facts-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+
+<div class="facts-grid">
+  <div class="fact-box">
+    <span class="fact-number">3.24B</span>
+    <span class="fact-label">Total views across all four H3 channels, 2013–2026 — enough to give every person on Earth a nearly half-view</span>
+  </div>
+  <div class="fact-box">
+    <span class="fact-number">1,638</span>
+    <span class="fact-label">Videos analyzed after filtering Shorts and zero-view uploads from the original 1,876-video pull</span>
+  </div>
+  <div class="fact-box">
+    <span class="fact-number">4.5×</span>
+    <span class="fact-label">How much harder h3h3Productions hits per video vs. the H3 Podcast — 4.78M median vs. 1.05M</span>
+  </div>
+  <div class="fact-box">
+    <span class="fact-number">9 months</span>
+    <span class="fact-label">The entire Frenemies Era — the most-watched stretch in H3 Podcast history, Sep 2020 to Jun 2021</span>
+  </div>
+  <div class="fact-box">
+    <span class="fact-number">14,487</span>
+    <span class="fact-label">Wikipedia pageviews for the H3 Podcast article in May 2025 — its all-time single-month peak</span>
+  </div>
+  <div class="fact-box">
+    <span class="fact-number">88 / 100</span>
+    <span class="fact-label">"Ethan Klein" Google search interest at the Frenemies Finale in June 2021 — the highest the personal brand ever indexed</span>
+  </div>
+</div>
+```
+
+---
+
+## CHART 1 — THE ERA TIMELINE
+
+### Monthly H3 Podcast Views, 2017–2026
+
+```{r chart1-era-timeline}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 10
+#| fig-height: 6.5
+
+era_lines <- data.frame(
+  date = as.Date(c(
+    "2020-09-15",
+    "2021-06-08",
+    "2021-09-26",
+    "2023-10-07"
+  )),
+  label = c(
+    "Frenemies\nPremiere",
+    "Frenemies\nFinale",
+    "Leftovers\nPremiere",
+    "Leftovers\nFinale"
+  ),
+  color = c(
+    art_highlight,
+    art_highlight,
+    art_secondary,
+    art_secondary
+  ),
+  vjust = c(1.3, 4.5, 1.3, 1.3)
+)
+
+p1 <- h3 |>
+  filter(channel == "H3 Podcast") |>
+  mutate(month_floor = floor_date(date, "month")) |>
+  group_by(month_floor) |>
+  summarise(monthly_views = sum(view_count, na.rm = TRUE)) |>
+  ggplot(aes(x = month_floor, y = monthly_views)) +
+  geom_area(fill = art_secondary, alpha = 0.15) +
+  geom_line(color = art_secondary, linewidth = 0.8) +
+  geom_vline(
+    data = era_lines,
+    aes(xintercept = date, color = color),
+    linetype = "dashed",
+    linewidth = 0.6
+  ) +
+  geom_text(
+    data = era_lines,
+    aes(x = date, y = Inf, label = label, color = color, vjust = vjust),
+    hjust = -0.08,
+    size = 2.7, fontface = "bold"
+  ) +
+  annotate(
+    "point",
+    x = as.Date("2017-08-01"),
+    y = 25000000,
+    color = art_highlight,
+    size = 3
+  ) +
+  annotate(
+    "text",
+    x = as.Date("2017-08-01"),
+    y = 25000000,
+    label = "Podcast Launch\nHoneymoon",
+    hjust = -0.1,
+    vjust = 0.5,
+    size = 2.7,
+    color = art_highlight,
+    fontface = "bold"
+  ) +
+  scale_color_identity() +
+  scale_y_continuous(labels = label_number(scale = 1e-6, suffix = "M")) +
+  scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+  labs(
+    title    = "THE <span style='color:#C0392B'>**FRENEMIES ERA**</span> IS A MOUNTAIN ON THE GRAPH",
+    subtitle = "Monthly Total Views, H3 Podcast Channel, 2017–2026",
+    x        = NULL,
+    y        = "Monthly Views",
+    caption  = "Data: YouTube Data API v3 | Artometrics Original Dataset\n— ARTOMETRICS"
+  ) +
+  theme_artometrics()
+
+p1
+
+ggsave("chart1_era_timeline.png", plot = p1,
+       path = ".", width = 12, height = 7, dpi = 300, bg = "white")
+```
+
+### [PLACEHOLDER — analysis coming]
+
+---
+
+## CHART 2 — THE CHANNEL PORTFOLIO
+
+### Per-Video View Distribution, All 4 Channels
+
+```{r chart2-channel-distribution}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 10
+#| fig-height: 6.5
+
+channel_order <- h3 |>
+  group_by(channel) |>
+  summarise(med = median(view_count, na.rm = TRUE)) |>
+  arrange(med) |>
+  pull(channel)
+
+channel_colors <- c(
+  "h3h3Productions" = art_highlight,
+  "H3 Podcast"      = art_secondary,
+  "Hila Klein"      = art_purple,
+  "Ethan Klein"     = art_teal
+)
+
+channel_medians <- h3 |>
+  group_by(channel) |>
+  summarise(
+    med      = median(view_count, na.rm = TRUE),
+    n_videos = n()
+  ) |>
+  mutate(channel = factor(channel, levels = channel_order))
+
+p2 <- h3 |>
+  mutate(channel = factor(channel, levels = channel_order)) |>
+  ggplot(aes(x = channel, y = view_count, fill = channel, color = channel)) +
+  geom_violin(alpha = 0.18, color = NA, trim = TRUE) +
+  geom_boxplot(
+    width = 0.12, fill = art_cream, outlier.shape = NA,
+    aes(color = channel), linewidth = 0.6
+  ) +
+  stat_summary(
+    fun = median, geom = "point",
+    size = 3.5, color = art_highlight, shape = 21,
+    aes(fill = channel)
+  ) +
+  geom_text(
+    data = channel_medians,
+    aes(x = channel, y = med,
+        label = paste0(round(med / 1e6, 2), "M\nmedian")),
+    nudge_x = 0.28, size = 2.8, color = art_dark, fontface = "bold",
+    hjust = 0, vjust = 0.5, inherit.aes = FALSE
+  ) +
+  geom_text(
+    data = channel_medians,
+    aes(x = channel, y = 3e4,
+        label = paste0("n = ", n_videos)),
+    size = 2.5, color = art_mid, inherit.aes = FALSE
+  ) +
+  scale_fill_manual(values = channel_colors, guide = "none") +
+  scale_color_manual(values = channel_colors, guide = "none") +
+  scale_y_log10(
+    labels = label_number(scale = 1e-6, suffix = "M"),
+    breaks = c(1e4, 1e5, 1e6, 1e7, 1e8),
+    minor_breaks = NULL
+  ) +
+  scale_x_discrete(labels = c(
+    "Ethan Klein"     = "Ethan Klein",
+    "H3 Podcast"      = "H3 Podcast",
+    "Hila Klein"      = "Hila Klein",
+    "h3h3Productions" = "h3h3Productions"
+  )) +
+  coord_flip() +
+  labs(
+    title    = "THE ORIGINAL CHANNEL STILL HITS HARDEST — <span style='color:#C0392B'>**4.5× THE MEDIAN**</span>",
+    subtitle = "Per-Video View Count Distribution by Channel | Log Scale | 2013–2026",
+    x        = NULL,
+    y        = "Views Per Video (Log Scale)",
+    caption  = "Data: YouTube Data API v3 | Artometrics Original Dataset\n— ARTOMETRICS"
+  ) +
+  theme_artometrics() +
+  theme(panel.grid.major.y = element_blank())
+
+p2
+
+ggsave("chart2_channel_portfolio.png", plot = p2,
+       path = ".", width = 12, height = 7, dpi = 300, bg = "white")
+```
+
+### [PLACEHOLDER — analysis coming]
+
+---
+
+## CHART 3 — THE OUTPUT MACHINE
+
+### Episode Volume by Month, 2017–2026
+
+```{r chart3-episode-volume}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 10
+#| fig-height: 6.5
+
+era_levels_ep <- c(
+  "Podcast Launch (2017–Sep 2020)",
+  "Frenemies Era (Sep 2020–Jun 2021)",
+  "Leftovers Era (Jun 2021–Oct 2023)",
+  "Post-Leftovers (Oct 2023–2026)"
+)
+
+era_colors_ep <- c(
+  "Podcast Launch (2017–Sep 2020)"    = art_secondary,
+  "Frenemies Era (Sep 2020–Jun 2021)" = art_highlight,
+  "Leftovers Era (Jun 2021–Oct 2023)" = art_purple,
+  "Post-Leftovers (Oct 2023–2026)"    = art_teal
+)
+
+p3_data <- episodes |>
+  mutate(
+    airDate = as.Date(airDate),
+    month   = floor_date(airDate, "month"),
+    era     = case_when(
+      airDate < as.Date("2020-09-15")                                    ~
+        "Podcast Launch (2017–Sep 2020)",
+      airDate >= as.Date("2020-09-15") & airDate < as.Date("2021-06-08") ~
+        "Frenemies Era (Sep 2020–Jun 2021)",
+      airDate >= as.Date("2021-06-08") & airDate < as.Date("2023-10-07") ~
+        "Leftovers Era (Jun 2021–Oct 2023)",
+      TRUE ~
+        "Post-Leftovers (Oct 2023–2026)"
+    ),
+    era = factor(era, levels = era_levels_ep)
+  ) |>
+  count(month, era)
+
+p3 <- ggplot(p3_data, aes(x = month, y = n, fill = era)) +
+  geom_col(width = 28) +
+  scale_fill_manual(
+    values = era_colors_ep,
+    guide  = guide_legend(nrow = 2, override.aes = list(size = 1))
+  ) +
+  scale_x_date(
+    date_breaks = "1 year",
+    date_labels = "%Y",
+    expand      = c(0.01, 0)
+  ) +
+  scale_y_continuous(
+    breaks = seq(0, 20, by = 2),
+    expand = c(0, 0.3)
+  ) +
+  labs(
+    title    = "THE <span style='color:#C0392B'>**2024 CLIFF**</span> — 72% DROP IN A SINGLE YEAR",
+    subtitle = "Monthly Episode Count, H3 Podcast (Podchaser) | Colored by Era | 680 Episodes Total",
+    x        = NULL,
+    y        = "Episodes Released",
+    fill     = NULL,
+    caption  = "Data: Podchaser API, pulled April 2026 | Artometrics Original Dataset\n— ARTOMETRICS"
+  ) +
+  theme_artometrics() +
+  theme(
+    legend.position    = "bottom",
+    legend.key.size    = unit(0.8, "lines"),
+    legend.spacing.x   = unit(0.4, "cm"),
+    panel.grid.major.x = element_blank()
+  )
+
+p3
+
+ggsave("chart3_episode_volume.png", plot = p3,
+       path = ".", width = 12, height = 7, dpi = 300, bg = "white")
+```
+
+### [PLACEHOLDER — analysis coming]
+
+---
+
+## CHART 4 — THE SEARCH STORY
+
+### Google Trends: Four Keywords, One Brand Arc
+
+```{r chart4-search-story}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 10
+#| fig-height: 6.5
+
+trend_palette <- c(
+  "h3h3"        = art_secondary,
+  "ethan klein" = art_highlight,
+  "frenemies"   = art_purple,
+  "teddy fresh" = art_teal
+)
+
+# Strip pre-show frenemies signal — the word predates H3's use of it.
+trends_chart4 <- trends |>
+  filter(!(keyword == "frenemies" & date < as.Date("2020-09-01")))
+
+trend_endpoints <- trends_chart4 |>
+  group_by(keyword) |>
+  filter(date == max(date)) |>
+  ungroup()
+
+key_events <- data.frame(
+  date  = as.Date(c("2017-08-01", "2021-06-01")),
+  hits  = c(100, 88),
+  label = c("Fair Use\nLawsuit Win", "Frenemies\nFinale"),
+  color = c(art_secondary, art_highlight),
+  vjust = c(-0.7, -0.7),
+  hjust = c(0.5, 0.5)
+)
+
+p4 <- trends_chart4 |>
+  ggplot(aes(x = date, y = hits, color = keyword, group = keyword)) +
+  geom_line(linewidth = 0.75, alpha = 0.9) +
+  geom_point(
+    data        = key_events,
+    aes(x = date, y = hits),
+    color       = key_events$color,
+    inherit.aes = FALSE,
+    size        = 3
+  ) +
+  geom_text(
+    data        = key_events,
+    aes(x = date, y = hits, label = label),
+    color       = key_events$color,
+    inherit.aes = FALSE,
+    size        = 2.6, fontface = "bold",
+    vjust       = key_events$vjust,
+    hjust       = key_events$hjust
+  ) +
+  scale_color_manual(
+    values = trend_palette,
+    guide  = guide_legend(nrow = 1, override.aes = list(linewidth = 2))
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y",
+    expand      = expansion(mult = c(0.01, 0.04))
+  ) +
+  scale_y_continuous(
+    breaks = c(0, 25, 50, 75, 100),
+    labels = c("0", "25", "50", "75", "100 (peak)"),
+    limits = c(0, 110)
+  ) +
+  labs(
+    title    = "SEARCH TELLS THE STORY OF <span style='color:#C0392B'>**THREE DIFFERENT H3S**</span>",
+    subtitle = "Google Trends Monthly Search Interest (US), 2012–2026 | 100 = Peak | Frenemies shown from Sep 2020 premiere",
+    x        = NULL,
+    y        = "Relative Search Interest",
+    caption  = "Data: Google Trends via gtrendsR v1.5.2 | Monthly granularity | All values relative — not comparable across keywords\n— ARTOMETRICS"
+  ) +
+  theme_artometrics() +
+  theme(
+    legend.position   = "bottom",
+    legend.title      = element_blank(),
+    legend.text       = element_text(size = 9, color = art_dark),
+    legend.key        = element_rect(fill = art_cream, color = NA),
+    legend.key.width  = unit(1.8, "cm"),
+    legend.spacing.x  = unit(0.4, "cm")
+  )
+
+p4
+
+ggsave("chart4_search_story.png", plot = p4,
+       path = ".", width = 12, height = 7, dpi = 300, bg = "white")
+```
+
+### [PLACEHOLDER — analysis coming]
+
+---
+
+## CHART 5 — THE CULTURAL FOOTPRINT
+
+### Wikipedia Monthly Pageviews, All Four H3 Articles
+
+```{r chart5-wikipedia}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 10
+#| fig-height: 6.5
+
+wiki_palette <- c(
+  "H3 Podcast"        = art_secondary,
+  "h3h3Productions"   = art_highlight,
+  "Teddy Fresh"       = art_teal,
+  "Leftovers Podcast" = art_purple
+)
+
+p5 <- wiki |>
+  ggplot(aes(x = date, y = pageviews, color = article, group = article)) +
+  geom_line(linewidth = 0.75, alpha = 0.9) +
+  geom_vline(
+    xintercept = as.Date("2025-05-01"),
+    linetype   = "dashed",
+    color      = art_highlight,
+    linewidth  = 0.55
+  ) +
+  annotate(
+    "text",
+    x     = as.Date("2025-05-01"),
+    y     = Inf,
+    label = "May 2025\nSynchronized Spike",
+    vjust = 1.3, hjust = -0.07,
+    size  = 2.7, color = art_highlight, fontface = "bold"
+  ) +
+  scale_color_manual(
+    values = wiki_palette,
+    guide  = guide_legend(nrow = 1, override.aes = list(linewidth = 2))
+  ) +
+  scale_x_date(
+    date_breaks = "1 year",
+    date_labels = "%Y",
+    expand      = expansion(mult = c(0.01, 0.04))
+  ) +
+  scale_y_continuous(labels = label_comma()) +
+  labs(
+    title    = "THE WIKIPEDIA PAGES ARE A <span style='color:#C0392B'>**CULTURAL SEISMOGRAPH**</span>",
+    subtitle = "Monthly Wikipedia Pageviews by Article | 2016–2026",
+    x        = NULL,
+    y        = "Pageviews",
+    caption  = "Data: Wikimedia REST API, pulled April 2026 | Coverage varies — pages created at different dates\n— ARTOMETRICS"
+  ) +
+  theme_artometrics() +
+  theme(
+    legend.position   = "bottom",
+    legend.title      = element_blank(),
+    legend.text       = element_text(size = 9, color = art_dark),
+    legend.key        = element_rect(fill = art_cream, color = NA),
+    legend.key.width  = unit(1.8, "cm"),
+    legend.spacing.x  = unit(0.4, "cm")
+  )
+
+p5
+
+ggsave("chart5_wikipedia.png", plot = p5,
+       path = ".", width = 12, height = 7, dpi = 300, bg = "white")
+```
+
+### [PLACEHOLDER — analysis coming]
+
+---
+
+## LIMITATIONS
+
+### [PLACEHOLDER — limitations coming]
+
+---
+
+## CONCLUSION
+
+### [PLACEHOLDER — conclusion coming]
+
+*— KSM*
+
+---
+
+## REFERENCES
+
+- YouTube Data API v3. Google.
+  https://developers.google.com/youtube/v3
+
+- Artometrics Original Dataset (April 2026). *H3 Podcast YouTube
+  Network, 2013–2026*. Compiled via YouTube Data API v3.
+  https://github.com/Artometrics/h3
+
+- Wikimedia Foundation. (2026). *Wikipedia pageview statistics*.
+  Retrieved via Wikimedia REST API.
+  https://wikimedia.org/api/rest_v1/
+
+- Google Trends. (2026). *Search interest data: h3h3, ethan klein,
+  frenemies, teddy fresh*. Retrieved via gtrendsR v1.5.2.
+  https://trends.google.com
+
+- Podchaser. (2026). *H3 Podcast episode data, 2017–2026*.
+  Retrieved via Podchaser API v1.
+  https://api.podchaser.com
+
+---
+
+## EDITOR'S NOTE
+
+This report was researched, written, designed, and produced in active
+collaboration with Claude AI (Anthropic). The data pipeline, statistical
+analysis, chart design, written analysis, narrative structure, and
+visual styling were all developed through a directed partnership between
+human editorial judgment and AI execution.
+
+Artometrics was built on the premise that rigorous analysis and honest
+process are not in conflict. The research questions, editorial instincts,
+interpretive framing, and brand vision are ours. The execution — every
+line of R code, every paragraph of analysis, every design decision —
+was a collaboration. We document this not as a disclaimer but as a
+description of how we actually work, and as a position: we believe this
+is what serious data journalism looks like when the tools available are
+used honestly and at full capacity.
+
+*— Artometrics Editorial*
