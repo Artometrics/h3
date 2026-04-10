@@ -723,6 +723,103 @@ that stayed. Each episode became a larger commitment, not a smaller one.
 The fans who remained weren't casual — they were in for 4 hours at a
 time.
 
+## CHART 7 — THE CONTROVERSY SEISMOGRAPH
+
+### Daily Wikipedia Traffic, April–June 2025
+
+```{r chart7-daily-wiki}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 10
+#| fig-height: 6.5
+
+daily_wiki <- read_csv(
+  "https://raw.githubusercontent.com/Artometrics/h3/main/h3_wikipedia_daily.csv"
+)
+
+daily_total <- daily_wiki |>
+  group_by(date) |>
+  summarise(total = sum(views))
+
+events <- data.frame(
+  date  = as.Date(c("2025-04-16", "2025-05-03", "2025-06-20")),
+  label = c(
+    "Content Cop\n– H3 drops",
+    "Creator Clash\ncollapse begins",
+    "Streamer lawsuit\nannounced"
+  ),
+  y     = c(9600, 8800, 3100),
+  hjust = c(-0.07, -0.07, 1.07)
+)
+
+p7 <- ggplot(daily_total, aes(x = date, y = total)) +
+  geom_area(fill = art_secondary, alpha = 0.12) +
+  geom_line(color = art_secondary, linewidth = 0.9) +
+  geom_vline(
+    data = events,
+    aes(xintercept = date),
+    color = art_highlight, linetype = "dashed", linewidth = 0.55
+  ) +
+  geom_text(
+    data = events,
+    aes(x = date, y = y, label = label, hjust = hjust),
+    color = art_highlight, size = 2.7, fontface = "bold",
+    lineheight = 0.9
+  ) +
+  scale_x_date(
+    date_breaks = "2 weeks",
+    date_labels = "%b %d",
+    expand      = expansion(mult = c(0.01, 0.02))
+  ) +
+  scale_y_continuous(labels = label_comma(), expand = c(0.02, 0)) +
+  labs(
+    title    = "EVERY SPIKE HAS A NAME — <span style='color:#C0392B'>**THREE CONTROVERSIES, THREE EARTHQUAKES**</span>",
+    subtitle = "Combined daily Wikipedia pageviews across all four H3 articles · Apr–Jun 2025",
+    x        = NULL,
+    y        = "Daily Pageviews",
+    caption  = "Data: Wikimedia REST API, pulled April 2026 | Artometrics Original Dataset\n— ARTOMETRICS"
+  ) +
+  theme_artometrics()
+
+p7
+
+ggsave("chart7_daily_wikipedia.png", plot = p7,
+       path = ".", width = 12, height = 7, dpi = 300, bg = "white")
+```
+
+### THE CONTENT COP THAT MOVED THE NEEDLE
+
+On April 16, 2025, iDubbbz dropped Content Cop – H3 — the first Content
+Cop in years, targeting the entire H3 brand. The Wikipedia data registered
+it the next day: **10,045 combined pageviews** on April 17, with
+h3h3Productions alone pulling **6,109**. People weren't just watching the
+drama — they were researching the origin story. The spike sustained
+through April 23 as the fallout spread across YouTube and X.
+
+### THE SYNCHRONIZED SPIKE IS THE WHOLE BRAND
+
+May 3 tells a different story than April. Where April was
+h3h3Productions-driven, May 3 hit every article simultaneously —
+including Leftovers at its single highest day in the window. That's the
+tell. iDubbbz's Content Cop had explicitly targeted Ethan's split with
+Hasan over the Israel-Palestine conflict, the same rupture that ended
+Leftovers. Readers weren't just looking up H3 — they were
+reconstructing the full arc of the brand to understand how it got here.
+
+### JUNE 20: THE LAWSUIT ANNOUNCEMENT AS A WIKIPEDIA EVENT
+
+The June 20 cluster is the smallest of the three but structurally
+identical — a single announcement, a coordinated spike. When Klein
+revealed plans to sue Twitch streamers Denims, Frogan, and Kaceytron
+for copyright infringement, the Wikipedia pattern repeated: controversy
+→ research → traffic. Across all three events, the data suggests H3's
+audience uses Wikipedia as a reference layer during live drama — not as
+a discovery tool. The spikes aren't people finding H3 for the first
+time. They're the existing audience fact-checking in real time.
+
+
+
 ---
 
 ## LIMITATIONS
