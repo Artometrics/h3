@@ -2,3 +2,7 @@
 .DS_Store
 Rplot.png
 %
+h3_reddit_posts.csv
+h3_snark_posts.csv
+r_h3h3productions_posts.jsonl
+r_h3snark_posts.jsonl
