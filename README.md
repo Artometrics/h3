@@ -1,92 +1,53 @@
-# The Artometrics of H3
+# H3: The Artometrics of a YouTube Dynasty
 
-**By Artometrics | Where art meets industry**
-[artometrics.com/h3](https://artometrics.com/h3) · [github.com/Artometrics/h3](https://github.com/Artometrics/h3)
+A creator profile data analysis of the H3 Podcast network — Ethan and Hila Klein's
+four-channel operation — built on a custom dataset assembled via the
+[YouTube Data API v3](https://developers.google.com/youtube/v3), Wikipedia Pageviews API,
+and Google Trends.
 
-A data-driven analysis of H3H3Productions — one of YouTube's most culturally significant creators — across views, eras, search behavior, Wikipedia footprint, and episode output.
+## What's in this repo
 
----
+- `h3.qmd` — Quarto markdown file containing all R, SQL, and Python code, analysis, and write-up
+- `data/h3_master.csv` — master dataset: 1,638 videos across 4 channels (filtered)
+- `data/h3_wikipedia.csv` — Wikipedia pageview data (monthly)
+- `data/h3_wikipedia_daily.csv` — Wikipedia pageview data (daily)
+- `data/h3_trends.csv` — Google Trends data via `gtrendsR`
+- `data/h3_podchaser_episodes.csv` — episode-level podcast data from Podchaser
+- `charts/chart1_era_timeline.png` — monthly H3 Podcast views 2017–2026 with Frenemies and Leftovers era markers
+- `charts/chart2_duration_drift.png` — episode duration drift by era and channel
+- `charts/chart3_reddit_activity.png` — Reddit activity: r/h3h3productions vs r/h3snark over time
 
-## Datasets
+## What the analysis covers
 
-| File | Source | Description |
-|------|--------|-------------|
-| `h3_master.csv` | YouTube Data API v3 | 1,638 videos across 4 H3 channels (filtered from 1,876 raw) |
-| `h3_trends.csv` | Google Trends | Weekly search interest for 4 keywords, 2012–2026 |
-| `h3_wikipedia.csv` | Wikimedia Pageviews API | Monthly Wikipedia pageviews for 4 articles, 2016–2026 |
-| `h3_podchaser_episodes.csv` | Podchaser API | 680 unique H3 Podcast episodes with air dates and durations, 2017–2026 |
+Three charts and a polyglot analysis (R + SQL + Python) working through
+what the data actually shows about one of YouTube's most unusual long-run careers:
 
----
+1. How H3 Podcast viewership evolved across four distinct eras — and what killed each one
+2. Whether episodes are getting longer, shorter, or more erratic — and what that signals about format
+3. How fan sentiment on Reddit splits between the main sub and the snark sub across the same events
 
-## Charts
+## Read the full article
 
-| Chart | File | Description |
-|-------|------|-------------|
-| 1 | `chart1_era_timeline.png` | Monthly H3 Podcast views with era annotations |
-| 2 | `chart2_channel_portfolio.png` | Per-video view distribution across all 4 channels |
-| 3 | `chart3_era_breakdown.png` | H3 Podcast views per episode by era |
-| 4 | `chart4_search_story.png` | Google Trends multi-line, 4 keywords |
-| 5 | `chart5_wikipedia.png` | Wikipedia pageviews multi-line, 4 articles |
+[artometrics.com/h3-the-artometrics-of-a-youtube-dynasty](https://www.artometrics.com/h3-the-artometrics-of-a-youtube-dynasty/)
 
----
+## Data sources
 
-## Reproducing the Analysis
+- [YouTube Data API v3](https://developers.google.com/youtube/v3) — video metadata, view counts, upload dates (Google Cloud project: ARTOMETRICS)
+- [Wikipedia Pageviews API](https://wikitech.wikimedia.org/wiki/Analytics/AQS/Pageviews) — no key required
+- [Google Trends](https://trends.google.com) via `gtrendsR` R package
+- [Podchaser](https://www.podchaser.com) — episode-level podcast metadata
 
-### Requirements
-
-- R 4.1+
-- Quarto
-- R packages: `tidyverse`, `ggplot2`, `ggrepel`, `ggtext`, `lubridate`, `scales`, `here`, `httr2`, `dotenv`
-
-Install all packages:
-
-```r
-install.packages(c(
-  "tidyverse", "ggplot2", "ggrepel", "ggtext",
-  "lubridate", "scales", "here", "httr2", "dotenv"
-))
-```
-
-### Render the report
-
-```r
-quarto::quarto_render("h3.qmd")
-```
-
-### Re-pulling the Podchaser data
-
-The Podchaser episode data is included as a static CSV. If you want to re-pull it fresh:
-
-1. Copy `.env.example` to `.env`
-2. Register at [podchaser.com/profile/settings/api](https://www.podchaser.com/profile/settings/api) and generate a free token
-3. Paste your Development Client Token into `.env`
-4. Run `podchaser_pull.R` from your console with the `/h3` folder as your working directory:
-
-```r
-setwd("path/to/h3")
-source("podchaser_pull.R")
-```
-
-> ⚠️ Never commit your `.env` file. It is listed in `.gitignore`.
-
----
+**Note:** Reddit JSONL source files (r/h3h3productions, r/h3snark) exceed GitHub's
+100 MB file size limit and are excluded from this repo. The processed summary CSV
+is included at `data/h3_snark_posts.csv`.
 
 ## Tools
 
-- **R 4.5.1** — data cleaning, analysis, visualization
-- **ggplot2** — all charts
-- **Quarto** — report rendering
-- **YouTube Data API v3** — video metadata
-- **Google Trends** — search interest data
-- **Wikimedia Pageviews API** — Wikipedia traffic
-- **Podchaser API** — podcast episode metadata
+- R / Quarto
+- tidyverse · ggplot2 · ggrepel · ggtext · scales · lubridate · httr · jsonlite · gtrendsR
+- Python (pandas · numpy) · SQL
 
----
+## Disclosure
 
-## About Artometrics
-
-Artometrics is a data journalism brand at the intersection of art, culture, and industry economics.
-
-[artometrics.com](https://artometrics.com) · [GitHub](https://github.com/Artometrics) · [LinkedIn](https://linkedin.com/company/artometrics)
-
-*Analysis by KSM. AI disclosure: portions of this workflow used Claude (Anthropic) for code assistance.*
+This analysis is based on original data work (R / YouTube Data API v3). AI was
+used to assist in analysis, research, and writing.
