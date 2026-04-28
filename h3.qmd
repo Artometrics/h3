@@ -1,5 +1,6 @@
 ---
-title: "THE ARTOMETRICS OF H3"
+title: "H3"
+subtitle: "The Artometrics of A YouTube Dynasty"
 format:
   html:
     number-sections: false
@@ -11,8 +12,10 @@ format:
     toc-location: left
     smooth-scroll: true
     embed-resources: true
-  pdf:
-    number-sections: false
+    code-fold: true
+    code-tools: true
+    include-in-header: art-head.html
+    include-before-body: art-body.html
 editor:
   markdown:
     wrap: 72
@@ -27,9 +30,8 @@ library(tidyverse)
 library(scales)
 library(ggtext)
 library(lubridate)
-library(httr)
-library(jsonlite)
-library(gtrendsR)
+
+dir.create("charts", showWarnings = FALSE)
 
 # Artometrics palette
 art_bg        <- "#FAFAF8"
@@ -47,19 +49,19 @@ art_teal      <- "#117864"
 theme_artometrics <- function() {
   theme_minimal(base_family = "Helvetica") +
     theme(
-      plot.background  = element_rect(fill = art_cream, color = NA),
-      panel.background = element_rect(fill = art_cream, color = NA),
-      panel.grid.major = element_line(color = art_muted, linewidth = 0.4),
-      panel.grid.minor = element_blank(),
-      plot.title       = element_markdown(size = 14, face = "bold",
-                                          color = art_dark),
-      plot.subtitle    = element_text(size = 11, color = art_mid),
-      plot.caption     = element_text(size = 8, color = art_mid, hjust = 0),
-      axis.text        = element_text(size = 9, color = art_mid),
-      axis.title       = element_text(size = 10, color = art_dark),
+      plot.background   = element_rect(fill = art_cream, color = NA),
+      panel.background  = element_rect(fill = art_cream, color = NA),
+      panel.grid.major  = element_line(color = art_muted, linewidth = 0.4),
+      panel.grid.minor  = element_blank(),
+      plot.title        = element_markdown(size = 14, face = "bold",
+                                           color = art_dark),
+      plot.subtitle     = element_text(size = 11, color = art_mid),
+      plot.caption      = element_text(size = 8, color = art_mid, hjust = 0),
+      axis.text         = element_text(size = 9, color = art_mid),
+      axis.title        = element_text(size = 10, color = art_dark),
       legend.background = element_rect(fill = art_cream, color = NA),
-      legend.text      = element_text(color = art_dark),
-      strip.text       = element_text(face = "bold", color = art_dark)
+      legend.text       = element_text(color = art_dark),
+      strip.text        = element_text(face = "bold", color = art_dark)
     )
 }
 ```
@@ -74,19 +76,66 @@ h3 <- read_csv(
 ) |>
   filter(duration_minutes > 1, view_count > 0)
 
-wiki <- read_csv(
-  "https://raw.githubusercontent.com/Artometrics/h3/main/h3_wikipedia.csv"
-)
-
-trends <- read_csv(
-  "https://raw.githubusercontent.com/Artometrics/h3/main/h3_trends.csv"
-) |>
-  filter(date >= as.Date("2012-01-01"))
-
 episodes <- read_csv(
   "https://raw.githubusercontent.com/Artometrics/h3/main/h3_podchaser_episodes.csv"
 )
+
+reddit <- read_csv("data/h3_reddit_posts.csv")
+snark  <- read_csv("data/h3_snark_posts.csv")
 ```
+
+---
+
+## DATASET CONTEXT
+
+### FOUR CHANNELS, ONE BRAND
+
+The H3 ecosystem is not a single channel — it is a network. h3h3Productions
+launched in 2011 as a reaction-and-commentary channel built around the
+Fair Use legal fight that briefly made Ethan Klein a cause célèbre in
+YouTube creator circles. The H3 Podcast launched in 2017 as a separate
+channel and quickly became the brand's primary vehicle. Hila Klein's
+channel documents the Teddy Fresh clothing brand. The Ethan Klein channel
+captures solo content and live streams. This report analyzes all four:
+**1,638 videos** after filtering Shorts and zero-view uploads from the
+original 1,876-video pull via the YouTube Data API v3.
+
+### THE ERA STRUCTURE
+
+H3's trajectory cannot be understood without the era framework.
+The podcast's baseline (2017–2020) established the format: long-form
+conversation between Ethan and Hila, irregular cadence, modest but
+loyal viewership. The **Frenemies Era** (September 2020 – June 2021)
+is the single most-watched stretch in H3 Podcast history — nine months
+in which Ethan co-hosted with Trisha Paytas, generating a level of
+weekly engagement the show has never approached since. The **Leftovers
+Era** (September 2021 – October 2023) brought a political co-host in
+Hasan Piker, a different kind of audience, and a deeper ideological
+identity for the brand. When Leftovers ended over disagreements about
+the Israel-Palestine conflict, H3 entered its current post-format phase:
+fewer episodes, longer runtimes, a shrinking but committed core audience.
+
+### THE DATA SOURCES
+
+The core dataset was built from scratch using the YouTube Data API v3,
+stored at `github.com/Artometrics/h3`. Podcast episode metadata comes
+from the Podchaser API (680 episodes, April 2026 pull). Reddit post data
+was pulled from the Arctic Shift Reddit archive, covering
+**r/h3h3productions** (749,974 posts, 2014–2026) and
+**r/h3snark** (25,766 posts, April 2023–2026) — the fan sub and the
+critic sub, both active during the most contentious period in the brand's
+history.
+
+### WHY THIS REPORT EXISTS
+
+H3 is one of the most data-rich creator brands on the internet. The
+combination of YouTube longevity (13 years), a documented era structure,
+an unusually organized fan and critic community, and a clothing brand
+with its own Wikipedia page creates a dataset that rewards analysis.
+This report does not take a position on the controversies. It reads the
+numbers and describes what they show.
+
+---
 
 ## FAST FACTS
 
@@ -128,7 +177,7 @@ episodes <- read_csv(
 <div class="facts-grid">
   <div class="fact-box">
     <span class="fact-number">3.24B</span>
-    <span class="fact-label">Total views across all four H3 channels, 2013–2026 — enough to give every person on Earth a nearly half-view</span>
+    <span class="fact-label">Total views across all four H3 channels, 2013–2026 — enough to give every person on Earth nearly half a view</span>
   </div>
   <div class="fact-box">
     <span class="fact-number">1,638</span>
@@ -143,15 +192,204 @@ episodes <- read_csv(
     <span class="fact-label">The entire Frenemies Era — the most-watched stretch in H3 Podcast history, Sep 2020 to Jun 2021</span>
   </div>
   <div class="fact-box">
-    <span class="fact-number">14,487</span>
-    <span class="fact-label">Wikipedia pageviews for the H3 Podcast article in May 2025 — its all-time single-month peak</span>
+    <span class="fact-number">680</span>
+    <span class="fact-label">H3 Podcast episodes analyzed via Podchaser API — median runtime grew from 42 minutes in 2017 to 220+ by 2024</span>
   </div>
   <div class="fact-box">
-    <span class="fact-number">88 / 100</span>
-    <span class="fact-label">"Ethan Klein" Google search interest at the Frenemies Finale in June 2021 — the highest the personal brand ever indexed</span>
+    <span class="fact-number">353</span>
+    <span class="fact-label">r/h3snark indexed activity at its April 2025 peak — 3.5× its own average, triggered by the iDubbbz Content Cop</span>
   </div>
 </div>
 ```
+
+---
+
+## SQL EXHIBIT
+
+The query below mirrors the R cleaning logic used in this report. It is
+display-only — this dataset lives in R and GitHub, not a relational
+database — but it documents the filtering decisions in a language built
+for them.
+
+<details>
+<summary><span class="art-lang-tag art-lang-sql">SQL</span> &nbsp;View filtering logic</summary>
+
+```sql
+-- H3 Master Dataset: Filter and Prepare
+-- Source: YouTube Data API v3 via Artometrics Original Pull
+-- Mirrors: load-data and clean-data chunks in h3.qmd
+
+SELECT
+    channel,
+    title,
+    date,
+    view_count,
+    duration_minutes,
+    DATE_TRUNC('month', date)   AS month_floor,
+    DATE_TRUNC('year',  date)   AS year_floor,
+
+    CASE
+        WHEN date < '2020-09-15'                              THEN 'Podcast Launch'
+        WHEN date BETWEEN '2020-09-15' AND '2021-06-08'      THEN 'Frenemies Era'
+        WHEN date BETWEEN '2021-09-26' AND '2023-10-07'      THEN 'Leftovers Era'
+        ELSE                                                       'Post-Leftovers'
+    END AS era
+
+FROM h3_master
+
+-- Exclude Shorts (< 2 min) and zero-view uploads
+WHERE duration_minutes > 1
+  AND view_count       > 0
+
+ORDER BY date ASC;
+
+
+-- Reddit indexing query (mirrors Chart 3 construction)
+-- Indexes each subreddit's monthly post count to its own average
+
+WITH monthly_counts AS (
+    SELECT
+        source,
+        DATE_TRUNC('month', date) AS month,
+        COUNT(*)                  AS n_posts
+    FROM (
+        SELECT 'r/h3h3productions' AS source, date FROM h3_reddit_posts
+        UNION ALL
+        SELECT 'r/h3snark'         AS source, date FROM h3_snark_posts
+    ) combined
+    GROUP BY source, DATE_TRUNC('month', date)
+),
+
+subreddit_averages AS (
+    SELECT
+        source,
+        AVG(n_posts) AS avg_posts
+    FROM monthly_counts
+    GROUP BY source
+)
+
+SELECT
+    mc.source,
+    mc.month,
+    mc.n_posts,
+    ROUND((mc.n_posts / sa.avg_posts) * 100, 1) AS index
+FROM monthly_counts mc
+JOIN subreddit_averages sa
+  ON mc.source = sa.source
+WHERE mc.month >= '2023-04-01'
+ORDER BY mc.source, mc.month;
+```
+
+</details>
+
+---
+
+## PYTHON EDA
+
+The script below documents the initial data pull and exploratory checks
+run before any R charts were built. It covers the YouTube API pull
+structure and basic diagnostic summaries across all four channels.
+
+<details>
+<summary><span class="art-lang-tag art-lang-python">Python</span> &nbsp;View EDA notebook</summary>
+
+```python
+# H3 Artometrics — Python EDA
+# Purpose: YouTube API pull structure + dataset diagnostics
+# Run before R chart build to validate data shape and coverage
+
+import pandas as pd
+import numpy as np
+from googleapiclient.discovery import build
+
+# ── 1. YouTube API Pull Structure ────────────────────────────────────────────
+
+# Channel IDs — H3 network
+CHANNEL_IDS = {
+    "h3h3Productions": "UCDWIvJwLJsE4LG1Atne2blQ",
+    "H3 Podcast":      "UCLtREklEc2upvIiudBMBmJg",
+    "Hila Klein":      "UCgPTHMbDMCkDcGsZsKnJFGQ",
+    "Ethan Klein":     "UCiDNNUJRqSHEtjGJO1m5mQA"
+}
+
+# API call pattern (executed separately, key stored in Google Cloud)
+# youtube = build("youtube", "v3", developerKey=API_KEY)
+# Results stored to data/h3_master.csv — 1,876 raw videos
+
+# ── 2. Load Master Dataset ───────────────────────────────────────────────────
+
+df = pd.read_csv("data/h3_master.csv", parse_dates=["date"])
+df_clean = df[(df["duration_minutes"] > 1) & (df["view_count"] > 0)].copy()
+
+print(f"Raw videos:    {len(df):,}")
+print(f"After filter:  {len(df_clean):,}")
+print(f"Dropped:       {len(df) - len(df_clean):,}")
+# Raw: 1,876 | After filter: 1,638 | Dropped: 238
+
+# ── 3. Channel Coverage ──────────────────────────────────────────────────────
+
+channel_summary = (
+    df_clean
+    .groupby("channel")
+    .agg(
+        videos      = ("view_count", "count"),
+        total_views = ("view_count", "sum"),
+        median_views= ("view_count", "median"),
+        first_video = ("date", "min"),
+        last_video  = ("date", "max")
+    )
+    .sort_values("total_views", ascending=False)
+)
+print(channel_summary.to_string())
+
+# ── 4. Era Flag ──────────────────────────────────────────────────────────────
+
+def assign_era(date):
+    if date < pd.Timestamp("2020-09-15"):
+        return "Podcast Launch"
+    elif date < pd.Timestamp("2021-06-08"):
+        return "Frenemies Era"
+    elif date < pd.Timestamp("2023-10-07"):
+        return "Leftovers Era"
+    else:
+        return "Post-Leftovers"
+
+df_clean["era"] = df_clean["date"].apply(assign_era)
+
+era_views = (
+    df_clean[df_clean["channel"] == "H3 Podcast"]
+    .groupby("era")["view_count"]
+    .agg(["sum", "median", "count"])
+    .rename(columns={"sum": "total", "median": "median", "count": "videos"})
+)
+print(era_views)
+
+# ── 5. Podchaser Episode Diagnostics ────────────────────────────────────────
+
+eps = pd.read_csv("data/h3_podchaser_episodes.csv", parse_dates=["airDate"])
+
+print(f"\nEpisodes total: {len(eps):,}")
+print(f"Date range:     {eps['airDate'].min().date()} → {eps['airDate'].max().date()}")
+print(f"Median runtime: {eps['length_min'].median():.0f} min")
+print(f"Max runtime:    {eps['length_min'].max():.0f} min")
+print(f"Missing duration: {eps['length_min'].isna().sum()} episodes")
+
+# ── 6. Reddit Coverage Check ─────────────────────────────────────────────────
+
+fans  = pd.read_csv("data/h3_reddit_posts.csv",  parse_dates=["date", "month"])
+snark = pd.read_csv("data/h3_snark_posts.csv",   parse_dates=["date", "month"])
+
+print(f"\nr/h3h3productions: {len(fans):,} posts | {fans['date'].min().date()} → {fans['date'].max().date()}")
+print(f"r/h3snark:         {len(snark):,} posts | {snark['date'].min().date()} → {snark['date'].max().date()}")
+
+# Overlap window for Chart 3 indexing
+overlap_start = pd.Timestamp("2023-04-01")
+fans_overlap  = fans[fans["date"] >= overlap_start]
+snark_overlap = snark[snark["date"] >= overlap_start]
+print(f"\nOverlap window (Apr 2023+): fans={len(fans_overlap):,} | snark={len(snark_overlap):,}")
+```
+
+</details>
 
 ---
 
@@ -241,362 +479,48 @@ p1 <- h3 |>
 p1
 
 ggsave("chart1_era_timeline.png", plot = p1,
-       path = ".", width = 12, height = 7, dpi = 300, bg = "white")
+       path = "charts", width = 12, height = 7, dpi = 300, bg = "white")
 ```
 
-### [PLACEHOLDER — analysis coming]
+### THE FRENEMIES MOUNTAIN
+
+The shape of this chart tells you almost everything you need to know
+about the H3 Podcast's commercial arc. From 2017 to mid-2020, the show
+built a reliable if unspectacular baseline — a few million views per
+month, loyal audience, consistent output. Then Trisha Paytas joined as
+co-host in September 2020 and the graph becomes a different document.
+Monthly views tripled within weeks. The peak months of the Frenemies
+Era outperformed the entire preceding three years of the podcast, and
+the show did it in nine months.
+
+### THE CLIFF IS PERMANENT
+
+When Frenemies ended in June 2021 — abruptly, on-camera, mid-episode —
+views dropped back toward baseline within a single month. Leftovers
+launched that September and added a new audience (Hasan Piker's
+political fanbase), generating a secondary bump visible in the 2022
+data. But it never approached Frenemies numbers. After Leftovers ended
+in October 2023, the chart enters its current phase: a slow, grinding
+decline with no structural catalyst in sight. The mountain is the story.
+Everything else is the aftermath.
+
+### WHAT THE BASELINE TELLS YOU
+
+Even at its post-2023 lows, the H3 Podcast pulls millions of monthly
+views. The brand did not collapse — it contracted to its core. The
+audience that remains watches longer episodes with more commitment than
+the casual Frenemies-era viewer. The cliff looks dramatic on the chart
+because Frenemies was genuinely anomalous. The current numbers are not
+a failure; they are what a major podcast looks like without a viral
+co-host dynamic driving weekly drama.
 
 ---
 
-## CHART 2 — THE CHANNEL PORTFOLIO
+## CHART 2 — THE DURATION DRIFT
 
-### Per-Video View Distribution, All 4 Channels
+### Median Episode Length by Month, H3 Podcast, 2017–2026
 
-```{r chart2-channel-distribution}
-#| echo: false
-#| warning: false
-#| message: false
-#| fig-width: 10
-#| fig-height: 6.5
-
-channel_order <- h3 |>
-  group_by(channel) |>
-  summarise(med = median(view_count, na.rm = TRUE)) |>
-  arrange(med) |>
-  pull(channel)
-
-channel_colors <- c(
-  "h3h3Productions" = art_highlight,
-  "H3 Podcast"      = art_secondary,
-  "Hila Klein"      = art_purple,
-  "Ethan Klein"     = art_teal
-)
-
-channel_medians <- h3 |>
-  group_by(channel) |>
-  summarise(
-    med      = median(view_count, na.rm = TRUE),
-    n_videos = n()
-  ) |>
-  mutate(channel = factor(channel, levels = channel_order))
-
-p2 <- h3 |>
-  mutate(channel = factor(channel, levels = channel_order)) |>
-  ggplot(aes(x = channel, y = view_count, fill = channel, color = channel)) +
-  geom_violin(alpha = 0.18, color = NA, trim = TRUE) +
-  geom_boxplot(
-    width = 0.12, fill = art_cream, outlier.shape = NA,
-    aes(color = channel), linewidth = 0.6
-  ) +
-  stat_summary(
-    fun = median, geom = "point",
-    size = 3.5, color = art_highlight, shape = 21,
-    aes(fill = channel)
-  ) +
-  geom_text(
-    data = channel_medians,
-    aes(x = channel, y = med,
-        label = paste0(round(med / 1e6, 2), "M\nmedian")),
-    nudge_x = 0.28, size = 2.8, color = art_dark, fontface = "bold",
-    hjust = 0, vjust = 0.5, inherit.aes = FALSE
-  ) +
-  geom_text(
-    data = channel_medians,
-    aes(x = channel, y = 3e4,
-        label = paste0("n = ", n_videos)),
-    size = 2.5, color = art_mid, inherit.aes = FALSE
-  ) +
-  scale_fill_manual(values = channel_colors, guide = "none") +
-  scale_color_manual(values = channel_colors, guide = "none") +
-  scale_y_log10(
-    labels = label_number(scale = 1e-6, suffix = "M"),
-    breaks = c(1e4, 1e5, 1e6, 1e7, 1e8),
-    minor_breaks = NULL
-  ) +
-  scale_x_discrete(labels = c(
-    "Ethan Klein"     = "Ethan Klein",
-    "H3 Podcast"      = "H3 Podcast",
-    "Hila Klein"      = "Hila Klein",
-    "h3h3Productions" = "h3h3Productions"
-  )) +
-  coord_flip() +
-  labs(
-    title    = "THE ORIGINAL CHANNEL STILL HITS HARDEST — <span style='color:#C0392B'>**4.5× THE MEDIAN**</span>",
-    subtitle = "Per-Video View Count Distribution by Channel | Log Scale | 2013–2026",
-    x        = NULL,
-    y        = "Views Per Video (Log Scale)",
-    caption  = "Data: YouTube Data API v3 | Artometrics Original Dataset\n— ARTOMETRICS"
-  ) +
-  theme_artometrics() +
-  theme(panel.grid.major.y = element_blank())
-
-p2
-
-ggsave("chart2_channel_portfolio.png", plot = p2,
-       path = ".", width = 12, height = 7, dpi = 300, bg = "white")
-```
-
-### [PLACEHOLDER — analysis coming]
-
----
-
-## CHART 3 — THE OUTPUT MACHINE
-
-### Episode Volume by Month, 2017–2026
-
-```{r chart3-episode-volume}
-#| echo: false
-#| warning: false
-#| message: false
-#| fig-width: 10
-#| fig-height: 6.5
-
-era_levels_ep <- c(
-  "Podcast Launch (2017–Sep 2020)",
-  "Frenemies Era (Sep 2020–Jun 2021)",
-  "Leftovers Era (Jun 2021–Oct 2023)",
-  "Post-Leftovers (Oct 2023–2026)"
-)
-
-era_colors_ep <- c(
-  "Podcast Launch (2017–Sep 2020)"    = art_secondary,
-  "Frenemies Era (Sep 2020–Jun 2021)" = art_highlight,
-  "Leftovers Era (Jun 2021–Oct 2023)" = art_purple,
-  "Post-Leftovers (Oct 2023–2026)"    = art_teal
-)
-
-p3_data <- episodes |>
-  mutate(
-    airDate = as.Date(airDate),
-    month   = floor_date(airDate, "month"),
-    era     = case_when(
-      airDate < as.Date("2020-09-15")                                    ~
-        "Podcast Launch (2017–Sep 2020)",
-      airDate >= as.Date("2020-09-15") & airDate < as.Date("2021-06-08") ~
-        "Frenemies Era (Sep 2020–Jun 2021)",
-      airDate >= as.Date("2021-06-08") & airDate < as.Date("2023-10-07") ~
-        "Leftovers Era (Jun 2021–Oct 2023)",
-      TRUE ~
-        "Post-Leftovers (Oct 2023–2026)"
-    ),
-    era = factor(era, levels = era_levels_ep)
-  ) |>
-  count(month, era)
-
-p3 <- ggplot(p3_data, aes(x = month, y = n, fill = era)) +
-  geom_col(width = 28) +
-  scale_fill_manual(
-    values = era_colors_ep,
-    guide  = guide_legend(nrow = 2, override.aes = list(size = 1))
-  ) +
-  scale_x_date(
-    date_breaks = "1 year",
-    date_labels = "%Y",
-    expand      = c(0.01, 0)
-  ) +
-  scale_y_continuous(
-    breaks = seq(0, 20, by = 2),
-    expand = c(0, 0.3)
-  ) +
-  labs(
-    title    = "THE <span style='color:#C0392B'>**2024 CLIFF**</span> — 72% DROP IN A SINGLE YEAR",
-    subtitle = "Monthly Episode Count, H3 Podcast (Podchaser) | Colored by Era | 680 Episodes Total",
-    x        = NULL,
-    y        = "Episodes Released",
-    fill     = NULL,
-    caption  = "Data: Podchaser API, pulled April 2026 | Artometrics Original Dataset\n— ARTOMETRICS"
-  ) +
-  theme_artometrics() +
-  theme(
-    legend.position    = "bottom",
-    legend.key.size    = unit(0.8, "lines"),
-    legend.spacing.x   = unit(0.4, "cm"),
-    panel.grid.major.x = element_blank()
-  )
-
-p3
-
-ggsave("chart3_episode_volume.png", plot = p3,
-       path = ".", width = 12, height = 7, dpi = 300, bg = "white")
-```
-
-### [PLACEHOLDER — analysis coming]
-
----
-
-## CHART 4 — THE SEARCH STORY
-
-### Google Trends: Four Keywords, One Brand Arc
-
-```{r chart4-search-story}
-#| echo: false
-#| warning: false
-#| message: false
-#| fig-width: 10
-#| fig-height: 6.5
-
-trend_palette <- c(
-  "h3h3"        = art_secondary,
-  "ethan klein" = art_highlight,
-  "frenemies"   = art_purple,
-  "teddy fresh" = art_teal
-)
-
-# Strip pre-show frenemies signal — the word predates H3's use of it.
-trends_chart4 <- trends |>
-  filter(!(keyword == "frenemies" & date < as.Date("2020-09-01")))
-
-trend_endpoints <- trends_chart4 |>
-  group_by(keyword) |>
-  filter(date == max(date)) |>
-  ungroup()
-
-key_events <- data.frame(
-  date  = as.Date(c("2017-08-01", "2021-06-01")),
-  hits  = c(100, 88),
-  label = c("Fair Use\nLawsuit Win", "Frenemies\nFinale"),
-  color = c(art_secondary, art_highlight),
-  vjust = c(-0.7, -0.7),
-  hjust = c(0.5, 0.5)
-)
-
-p4 <- trends_chart4 |>
-  ggplot(aes(x = date, y = hits, color = keyword, group = keyword)) +
-  geom_line(linewidth = 0.75, alpha = 0.9) +
-  geom_point(
-    data        = key_events,
-    aes(x = date, y = hits),
-    color       = key_events$color,
-    inherit.aes = FALSE,
-    size        = 3
-  ) +
-  geom_text(
-    data        = key_events,
-    aes(x = date, y = hits, label = label),
-    color       = key_events$color,
-    inherit.aes = FALSE,
-    size        = 2.6, fontface = "bold",
-    vjust       = key_events$vjust,
-    hjust       = key_events$hjust
-  ) +
-  scale_color_manual(
-    values = trend_palette,
-    guide  = guide_legend(nrow = 1, override.aes = list(linewidth = 2))
-  ) +
-  scale_x_date(
-    date_breaks = "2 years",
-    date_labels = "%Y",
-    expand      = expansion(mult = c(0.01, 0.04))
-  ) +
-  scale_y_continuous(
-    breaks = c(0, 25, 50, 75, 100),
-    labels = c("0", "25", "50", "75", "100 (peak)"),
-    limits = c(0, 110)
-  ) +
-  labs(
-    title    = "SEARCH TELLS THE STORY OF <span style='color:#C0392B'>**THREE DIFFERENT H3S**</span>",
-    subtitle = "Google Trends Monthly Search Interest (US), 2012–2026 | 100 = Peak | Frenemies shown from Sep 2020 premiere",
-    x        = NULL,
-    y        = "Relative Search Interest",
-    caption  = "Data: Google Trends via gtrendsR v1.5.2 | Monthly granularity | All values relative — not comparable across keywords\n— ARTOMETRICS"
-  ) +
-  theme_artometrics() +
-  theme(
-    legend.position   = "bottom",
-    legend.title      = element_blank(),
-    legend.text       = element_text(size = 9, color = art_dark),
-    legend.key        = element_rect(fill = art_cream, color = NA),
-    legend.key.width  = unit(1.8, "cm"),
-    legend.spacing.x  = unit(0.4, "cm")
-  )
-
-p4
-
-ggsave("chart4_search_story.png", plot = p4,
-       path = ".", width = 12, height = 7, dpi = 300, bg = "white")
-```
-
-### [PLACEHOLDER — analysis coming]
-
----
-
-## CHART 5 — THE CULTURAL FOOTPRINT
-
-### Wikipedia Monthly Pageviews, All Four H3 Articles
-
-```{r chart5-wikipedia}
-#| echo: false
-#| warning: false
-#| message: false
-#| fig-width: 10
-#| fig-height: 6.5
-
-wiki_palette <- c(
-  "H3 Podcast"        = art_secondary,
-  "h3h3Productions"   = art_highlight,
-  "Teddy Fresh"       = art_teal,
-  "Leftovers Podcast" = art_purple
-)
-
-p5 <- wiki |>
-  ggplot(aes(x = date, y = pageviews, color = article, group = article)) +
-  geom_line(linewidth = 0.75, alpha = 0.9) +
-  geom_vline(
-    xintercept = as.Date("2025-05-01"),
-    linetype   = "dashed",
-    color      = art_highlight,
-    linewidth  = 0.55
-  ) +
-  annotate(
-    "text",
-    x     = as.Date("2025-05-01"),
-    y     = Inf,
-    label = "May 2025\nSynchronized Spike",
-    vjust = 1.3, hjust = -0.07,
-    size  = 2.7, color = art_highlight, fontface = "bold"
-  ) +
-  scale_color_manual(
-    values = wiki_palette,
-    guide  = guide_legend(nrow = 1, override.aes = list(linewidth = 2))
-  ) +
-  scale_x_date(
-    date_breaks = "1 year",
-    date_labels = "%Y",
-    expand      = expansion(mult = c(0.01, 0.04))
-  ) +
-  scale_y_continuous(labels = label_comma()) +
-  labs(
-    title    = "THE WIKIPEDIA PAGES ARE A <span style='color:#C0392B'>**CULTURAL SEISMOGRAPH**</span>",
-    subtitle = "Monthly Wikipedia Pageviews by Article | 2016–2026",
-    x        = NULL,
-    y        = "Pageviews",
-    caption  = "Data: Wikimedia REST API, pulled April 2026 | Coverage varies — pages created at different dates\n— ARTOMETRICS"
-  ) +
-  theme_artometrics() +
-  theme(
-    legend.position   = "bottom",
-    legend.title      = element_blank(),
-    legend.text       = element_text(size = 9, color = art_dark),
-    legend.key        = element_rect(fill = art_cream, color = NA),
-    legend.key.width  = unit(1.8, "cm"),
-    legend.spacing.x  = unit(0.4, "cm")
-  )
-
-p5
-
-ggsave("chart5_wikipedia.png", plot = p5,
-       path = ".", width = 12, height = 7, dpi = 300, bg = "white")
-```
-
-### [PLACEHOLDER — analysis coming]
-
----
-
-## CHART 6 — THE DURATION DRIFT
-
-### Episode Duration Over Time, 2017–2026
-
-```{r chart6-episode-duration}
+```{r chart2-duration-drift}
 #| echo: false
 #| warning: false
 #| message: false
@@ -611,13 +535,13 @@ era_levels_dur <- c(
 )
 
 era_colors_dur <- c(
-  "Podcast Launch (2017–Sep 2020)"       = art_secondary,
-  "Frenemies Era (Sep 2020–Jun 2021)"    = art_highlight,
-  "Leftovers Era (Jun 2021–Oct 2023)"    = art_purple,
-  "Post-Leftovers (Oct 2023–2026)"       = art_teal
+  "Podcast Launch (2017–Sep 2020)"    = art_secondary,
+  "Frenemies Era (Sep 2020–Jun 2021)" = art_highlight,
+  "Leftovers Era (Jun 2021–Oct 2023)" = art_purple,
+  "Post-Leftovers (Oct 2023–2026)"    = art_teal
 )
 
-p6_data <- episodes |>
+p2_data <- episodes |>
   mutate(
     airDate = as.Date(airDate),
     month   = floor_date(airDate, "month"),
@@ -636,7 +560,7 @@ p6_data <- episodes |>
   group_by(month, era) |>
   summarise(median_min = median(length_min, na.rm = TRUE), .groups = "drop")
 
-p6 <- ggplot(p6_data, aes(x = month, y = median_min)) +
+p2 <- ggplot(p2_data, aes(x = month, y = median_min)) +
   geom_point(aes(color = era), size = 2, alpha = 0.5) +
   geom_smooth(
     method    = "loess",
@@ -690,10 +614,10 @@ p6 <- ggplot(p6_data, aes(x = month, y = median_min)) +
     panel.grid.major.x = element_blank()
   )
 
-p6
+p2
 
-ggsave("chart6_episode_duration.png", plot = p6,
-       path = ".", width = 12, height = 7, dpi = 300, bg = "white")
+ggsave("chart2_duration_drift.png", plot = p2,
+       path = "charts", width = 12, height = 7, dpi = 300, bg = "white")
 ```
 
 ### 42 MINUTES TO 4 HOURS: THE CREEP NOBODY NOTICED
@@ -702,7 +626,9 @@ When H3 launched the podcast in 2017, the median episode ran **42
 minutes**. That's a commute. By 2024, the median had crossed **220
 minutes** — longer than most feature films. The chart shows this wasn't
 a sudden format change; it was a slow, continuous drift upward that
-compounded year over year until a new normal was established.
+compounded year over year until a new normal was established. No single
+episode caused it. No announcement reset it. The show just kept going
+longer, and the audience kept watching.
 
 ### THE FLOOR SHIFT OF 2022
 
@@ -711,126 +637,240 @@ a floor shift. Before 2022, monthly medians regularly dipped below 120
 minutes. After 2022, they never did. The show locked into 3-hour-plus
 territory and stayed there. Leftovers (2021) normalized the extended
 format; by the time it ended (2023), the audience had been conditioned
-to expect marathon sessions as the default.
+to expect marathon sessions as the default. That conditioning didn't
+reverse when Leftovers ended.
 
 ### FEWER EPISODES, LONGER RUNTIME — THE 2024 PARADOX
 
-Cross-reference with Chart 3 and the story gets sharper. In 2024, H3
-dropped to just **34 episodes** — a 72% collapse from 2023's peak. But
-duration hit its all-time high: months regularly clearing **220–240
-minutes**. The show was publishing less but asking more from the audience
-that stayed. Each episode became a larger commitment, not a smaller one.
-The fans who remained weren't casual — they were in for 4 hours at a
-time.
+In 2024, H3 published far fewer episodes than in prior years — but
+duration hit its all-time high, with months regularly clearing
+**220–240 minutes**. The show was publishing less but asking more from
+the audience that stayed. Each episode became a larger commitment, not
+a smaller one. The fans who remained weren't casual — they were in for
+4 hours at a time. Whether that is sustainable is a different question.
+The data just shows it happened.
 
-## CHART 7 — THE CONTROVERSY SEISMOGRAPH
+---
 
-### Daily Wikipedia Traffic, April–June 2025
+## CHART 3 — THE FAN VS. CRITIC DIVIDE
 
-```{r chart7-daily-wiki}
+### Reddit Post Volume Indexed by Subreddit, Apr 2023–Mar 2026
+
+```{r chart3-reddit-activity}
 #| echo: false
 #| warning: false
 #| message: false
 #| fig-width: 10
 #| fig-height: 6.5
 
-daily_wiki <- read_csv(
-  "https://raw.githubusercontent.com/Artometrics/h3/main/h3_wikipedia_daily.csv"
-)
+# Build combined indexed dataset
+# Overlap window: April 2023 onward (when both subs exist)
+window_start <- as.Date("2023-04-01")
 
-daily_total <- daily_wiki |>
-  group_by(date) |>
-  summarise(total = sum(views))
+fan_monthly <- reddit |>
+  filter(month >= window_start) |>
+  count(month) |>
+  mutate(source = "r/h3h3productions (Fans)")
 
-events <- data.frame(
-  date  = as.Date(c("2025-04-16", "2025-05-03", "2025-06-20")),
+snark_monthly <- snark |>
+  filter(month >= window_start) |>
+  count(month) |>
+  mutate(source = "r/h3snark (Critics)")
+
+combined <- bind_rows(fan_monthly, snark_monthly) |>
+  group_by(source) |>
+  mutate(index = (n / mean(n, na.rm = TRUE)) * 100) |>
+  ungroup()
+
+# Key annotated points
+key_points <- combined |>
+  filter(
+    (source == "r/h3snark (Critics)" & month == as.Date("2025-04-01")) |
+    (source == "r/h3h3productions (Fans)" & month == as.Date("2025-04-01"))
+  ) |>
+  mutate(
+    label = case_when(
+      source == "r/h3snark (Critics)"      ~ paste0(round(index), " (peak)"),
+      source == "r/h3h3productions (Fans)" ~ paste0(round(index))
+    ),
+    vjust = case_when(
+      source == "r/h3snark (Critics)"      ~ -0.8,
+      source == "r/h3h3productions (Fans)" ~ 1.6
+    )
+  )
+
+vlines <- data.frame(
+  date  = as.Date(c("2023-10-07", "2025-01-31", "2025-04-16")),
   label = c(
-    "Content Cop\n– H3 drops",
-    "Creator Clash\ncollapse begins",
-    "Streamer lawsuit\nannounced"
+    "Leftovers ends\n+ Gaza fallout",
+    "Content Nuke\n– Hasan",
+    "Content Cop\n– H3"
   ),
-  y     = c(9600, 8800, 3100),
-  hjust = c(-0.07, -0.07, 1.07)
+  y = c(340, 290, 240)
 )
 
-p7 <- ggplot(daily_total, aes(x = date, y = total)) +
-  geom_area(fill = art_secondary, alpha = 0.12) +
-  geom_line(color = art_secondary, linewidth = 0.9) +
+p3 <- ggplot(combined, aes(x = month, y = index, color = source)) +
+  geom_line(linewidth = 0.9) +
+  geom_hline(
+    yintercept = 100,
+    linetype   = "dashed",
+    color      = art_mid,
+    linewidth  = 0.4
+  ) +
   geom_vline(
-    data = events,
+    data = vlines,
     aes(xintercept = date),
-    color = art_highlight, linetype = "dashed", linewidth = 0.55
+    color = art_mid, linetype = "dotted", linewidth = 0.6,
+    inherit.aes = FALSE
   ) +
   geom_text(
-    data = events,
-    aes(x = date, y = y, label = label, hjust = hjust),
-    color = art_highlight, size = 2.7, fontface = "bold",
-    lineheight = 0.9
+    data = vlines,
+    aes(x = date, y = y, label = label),
+    color = art_mid, size = 2.5, fontface = "bold",
+    hjust = -0.07, lineheight = 0.9,
+    inherit.aes = FALSE
   ) +
-  scale_x_date(
-    date_breaks = "2 weeks",
-    date_labels = "%b %d",
-    expand      = expansion(mult = c(0.01, 0.02))
+  geom_point(
+    data = key_points,
+    aes(x = month, y = index),
+    size = 2.5,
+    inherit.aes = TRUE
   ) +
-  scale_y_continuous(labels = label_comma(), expand = c(0.02, 0)) +
+  geom_text(
+    data = key_points,
+    aes(x = month, y = index, label = label, vjust = vjust),
+    size = 2.6, fontface = "bold",
+    show.legend = FALSE
+  ) +
+  scale_color_manual(values = c(
+    "r/h3h3productions (Fans)" = art_secondary,
+    "r/h3snark (Critics)"      = art_highlight
+  )) +
+  scale_x_date(date_breaks = "3 months", date_labels = "%b %Y") +
+  scale_y_continuous(
+    expand = c(0.1, 0)
+  ) +
   labs(
-    title    = "EVERY SPIKE HAS A NAME — <span style='color:#C0392B'>**THREE CONTROVERSIES, THREE EARTHQUAKES**</span>",
-    subtitle = "Combined daily Wikipedia pageviews across all four H3 articles · Apr–Jun 2025",
+    title    = "FANS AND CRITICS RESPOND TO <span style='color:#C0392B'>**COMPLETELY DIFFERENT TRIGGERS**</span>",
+    subtitle = "Monthly Post Volume Indexed to Each Subreddit's Own Average (100 = Baseline) · Apr 2023–Mar 2026",
     x        = NULL,
-    y        = "Daily Pageviews",
-    caption  = "Data: Wikimedia REST API, pulled April 2026 | Artometrics Original Dataset\n— ARTOMETRICS"
+    y        = "Indexed Activity (100 = Avg)",
+    color    = NULL,
+    caption  = "Source: Arctic Shift Reddit Archive · Artometrics Original Dataset\n— ARTOMETRICS"
   ) +
-  theme_artometrics()
+  theme_artometrics() +
+  theme(
+    legend.position    = "bottom",
+    legend.key.size    = unit(0.8, "lines"),
+    panel.grid.major.x = element_blank(),
+    axis.text.x        = element_text(angle = 30, hjust = 1)
+  )
 
-p7
+p3
 
-ggsave("chart7_daily_wikipedia.png", plot = p7,
-       path = ".", width = 12, height = 7, dpi = 300, bg = "white")
+ggsave("chart3_reddit_activity.png", plot = p3,
+       path = "charts", width = 12, height = 7, dpi = 300, bg = "white")
 ```
 
-### THE CONTENT COP THAT MOVED THE NEEDLE
+### THE CRITIC COMMUNITY PEAKED WHILE FANS WERE CHECKED OUT
 
-On April 16, 2025, iDubbbz dropped Content Cop – H3 — the first Content
-Cop in years, targeting the entire H3 brand. The Wikipedia data registered
-it the next day: **10,045 combined pageviews** on April 17, with
-h3h3Productions alone pulling **6,109**. People weren't just watching the
-drama — they were researching the origin story. The spike sustained
-through April 23 as the fallout spread across YouTube and X.
+The indexed chart removes the raw scale difference between subreddits
+and asks a cleaner question: when did each community spike relative to
+its own normal? The answer is almost never at the same time. When the
+iDubbbz Content Cop dropped on April 16, 2025 — the first Content Cop
+in years, explicitly targeting the H3 brand — r/h3snark hit its
+all-time peak at more than **3.5× its own average**. The fan sub
+barely registered the same event. The two communities were watching
+completely different shows.
 
-### THE SYNCHRONIZED SPIKE IS THE WHOLE BRAND
+### KLEIN KILLED HIS OWN CRITIC COMMUNITY
 
-May 3 tells a different story than April. Where April was
-h3h3Productions-driven, May 3 hit every article simultaneously —
-including Leftovers at its single highest day in the window. That's the
-tell. iDubbbz's Content Cop had explicitly targeted Ethan's split with
-Hasan over the Israel-Palestine conflict, the same rupture that ended
-Leftovers. Readers weren't just looking up H3 — they were
-reconstructing the full arc of the brand to understand how it got here.
+The cliff in the snark data after May 2025 isn't a controversy dying
+down — it's a subreddit going dark. After Klein issued copyright claims
+against r/h3snark moderators and threatened legal action, the sub
+announced an indefinite hiatus. The index collapsed to near zero within
+weeks. The fan sub, meanwhile, continued its slow decline — below its
+own average but still functional. The snark community didn't fade. It
+was shut down. That distinction matters: one line represents organic
+audience erosion, the other represents a legal intervention.
 
-### JUNE 20: THE LAWSUIT ANNOUNCEMENT AS A WIKIPEDIA EVENT
+### FANS ARE IN LONG-TERM DECLINE TOO
 
-The June 20 cluster is the smallest of the three but structurally
-identical — a single announcement, a coordinated spike. When Klein
-revealed plans to sue Twitch streamers Denims, Frogan, and Kaceytron
-for copyright infringement, the Wikipedia pattern repeated: controversy
-→ research → traffic. Across all three events, the data suggests H3's
-audience uses Wikipedia as a reference layer during live drama — not as
-a discovery tool. The spikes aren't people finding H3 for the first
-time. They're the existing audience fact-checking in real time.
-
-
+The blue line tells its own quieter story. The fan sub never spikes
+the way snark does — no single event moves it dramatically above
+baseline. But the trend is unmistakably downward. The community isn't
+in crisis; it's in slow erosion. Fewer new things to discuss, fewer
+viral moments to dissect, fewer reasons to post. The legal drama —
+the Content Cop, the streamer lawsuits — barely registered. Whatever
+drives fan engagement on r/h3h3productions, it isn't courtroom news.
 
 ---
 
 ## LIMITATIONS
 
-### [PLACEHOLDER — limitations coming]
+### DATA COVERAGE GAPS
+
+The YouTube data captures view counts as of the April 2026 pull — not
+at time of publication. Older videos have had years to accumulate views
+through algorithmic recommendations and search, which means early
+h3h3Productions videos are systematically over-represented in lifetime
+view totals relative to their original performance. The era-based
+analysis on the H3 Podcast channel is less affected because the
+comparison is within-channel across time.
+
+### REDDIT ARCHIVE COMPLETENESS
+
+The Arctic Shift Reddit archive is comprehensive but not guaranteed
+complete. Deleted posts, removed comments, and accounts banned before
+archival are absent from the dataset. The r/h3snark data begins in
+April 2023 — the sub's founding — so pre-2023 critical community
+activity is unrepresented. Any conclusions about the fan-vs-critic
+dynamic are bounded by that window.
+
+### PODCHASER EPISODE METADATA
+
+Episode duration data from Podchaser is self-reported by the show and
+may include inconsistencies for older episodes, live streams published
+as podcast episodes, and bonus or clip content. Episodes with missing
+duration values were excluded from Chart 2 analysis.
+
+### INDEXING METHODOLOGY
+
+Chart 3 indexes each subreddit to its own average across the Apr
+2023–Mar 2026 window. This removes absolute scale differences between
+subreddits but also means a subreddit with very low activity in early
+months will show inflated index values in later high-activity periods.
+The r/h3snark baseline is built on its full available history, which
+starts at launch — a period of lower activity — and may slightly
+inflate peak readings relative to a steadier baseline.
 
 ---
 
 ## CONCLUSION
 
-### [PLACEHOLDER — conclusion coming]
+The H3 data tells a story about what happens when a creator brand
+builds its peak moment around someone else. The Frenemies Era was
+genuinely anomalous — nine months of co-host-driven drama that
+tripled the podcast's monthly viewership and created a ceiling the
+show has never approached since. The chart is unambiguous about this.
+The current audience is not a collapse; it is a correction back to
+what the brand can sustain on its own terms.
+
+The duration data adds a different dimension. The show that emerged
+from the Frenemies aftermath is structurally different from the one
+that preceded it — longer, less frequent, more demanding. Whether
+that format is a creative choice or a symptom of a contracting
+audience is a question the data cannot answer. Both explanations fit
+the numbers.
+
+The Reddit chart is the most structurally interesting of the three.
+It documents not just audience behavior but audience management: a
+creator using legal tools to suppress a critic community. The snark
+subreddit's cliff is not organic. It is the result of a deliberate
+intervention. The fan sub's slower decline runs in parallel and
+suggests the underlying engagement problem would exist regardless.
+Two different communities, two different trajectories, one brand
+caught between them.
 
 *— KSM*
 
@@ -845,6 +885,14 @@ time. They're the existing audience fact-checking in real time.
   Network, 2013–2026*. Compiled via YouTube Data API v3.
   https://github.com/Artometrics/h3
 
+- Podchaser. (2026). *H3 Podcast episode data, 2017–2026*.
+  Retrieved via Podchaser API v1.
+  https://api.podchaser.com
+
+- Arctic Shift Reddit Archive. (2026). *r/h3h3productions and
+  r/h3snark post data*. Retrieved April 2026.
+  https://arctic-shift.photon-reddit.com
+
 - Wikimedia Foundation. (2026). *Wikipedia pageview statistics*.
   Retrieved via Wikimedia REST API.
   https://wikimedia.org/api/rest_v1/
@@ -852,10 +900,6 @@ time. They're the existing audience fact-checking in real time.
 - Google Trends. (2026). *Search interest data: h3h3, ethan klein,
   frenemies, teddy fresh*. Retrieved via gtrendsR v1.5.2.
   https://trends.google.com
-
-- Podchaser. (2026). *H3 Podcast episode data, 2017–2026*.
-  Retrieved via Podchaser API v1.
-  https://api.podchaser.com
 
 ---
 
@@ -877,3 +921,14 @@ is what serious data journalism looks like when the tools available are
 used honestly and at full capacity.
 
 *— Artometrics Editorial*
+
+---
+
+## THANK YOU
+
+This report uses data from the YouTube Data API v3, the Podchaser API,
+and the Arctic Shift Reddit Archive. The TidyTuesday community and the
+broader open data ecosystem make work like this possible.
+
+If you have feedback, corrections, or data to add, reach out at
+**artometrics.com**.
