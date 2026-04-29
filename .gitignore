@@ -4,6 +4,3 @@
 *_files/
 __pycache__/
 *.pyc
-data/r_h3h3productions_posts.jsonl
-data/r_h3snark_posts.jsonl
-data/h3_reddit_posts.csv
